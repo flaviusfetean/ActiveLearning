@@ -1,0 +1,9 @@
+selection_strategy: 'random'
+num_labeled: 196
+budget: 1000
+selection_size: 50
+images_path: "C:\\BitBucket\\ato_active_learning\\segmentation\\tests\\test_dataset\\imgs"
+labels_path: "C:\\BitBucket\\ato_active_learning\\segmentation\\tests\\test_dataset\\masks"
+test_path: "C:\\BitBucket\\ato_active_learning\\segmentation\\tests\\test_dataset\\test"
+model_path: "C:\\BitBucket\\ato_active_learning\\segmentation\\tests\\test_model"
+colors:
