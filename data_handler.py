@@ -1,6 +1,6 @@
 import shutil
 import numpy as np
-from data_tooling.utils.files_utils import get_paths_with_extensions, get_names, get_paths
+from utils.files_utils import get_paths_with_extensions, get_names, get_paths
 import os
 
 

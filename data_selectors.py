@@ -5,7 +5,8 @@ import cv2
 from typing import Callable
 import tqdm
 from data_handler import DataHandler
-from data_tooling.utils.files_utils import get_name_from_path
+from utils.files_utils import get_name_from_path
+from utils.models_utils import create_model_with_dropout_heads
 
 DEBUG = os.environ.get("DEBUG", False)
 DISABLE_VERBOSE = os.environ.get("DISABLE_VERBOSE", False)
@@ -46,13 +47,10 @@ class Selector(ABC):
         preprocess_func: Preprocessing function. This function will be executed before inference.
 
         """
-        images_paths = self.data_handler.get_unselected_images()[:20 if DEBUG else -1]
-
+        images_paths = self.data_handler.get_unselected_images()[:40 if DEBUG else -1]
         scores_dict = self.build_score_dict(model, images_paths, preprocess_func)
-
         best_samples = self.selection_strategy.get_best_samples(scores=scores_dict,
                                                                 selection_size=self.selection_size)
-
         self.data_handler.move_to_selected_by_names(best_samples, include_extension=True)
 
 
@@ -123,15 +121,7 @@ class BayesianSelector(Selector):
 
         """
 
-        output_pre_dropout = model.layers[-2].output
-        dropout_heads = []
-
-        for i in range(self.ensemble_size):
-            output_dropout = tf.keras.layers.Dropout(0.5)(output_pre_dropout, training=True)
-            output_dropout = model.layers[-1](output_dropout)
-            dropout_heads.append(output_dropout)
-
-        model_dropout = tf.keras.Model(model.inputs, dropout_heads)
+        model_dropout = create_model_with_dropout_heads(model, dropout_rate=0.5, num_heads=self.ensemble_size)
         predictions = model_dropout.predict(model_input, verbose=0)
 
         return np.array(predictions)
@@ -141,12 +131,10 @@ class BayesianSelector(Selector):
         prediction_dict = {}
         for image_path in tqdm.tqdm(images_paths, disable=DISABLE_VERBOSE):
             model_input = cv2.imread(image_path)
-            #cv2.imshow("orig_image", cv2.resize(model_input, (960, 512)))
             model_input = preprocess_func(model_input)
             model_input = np.expand_dims(model_input, axis=0)
-            image_name = image_path.split(os.path.sep)[-1]
-            score = self.selection_strategy.score(self.montecarlo_dropout(model, model_input), image_name)
-            prediction_dict[image_path.split(os.path.sep)[-1]] = score
+            score = self.selection_strategy.score(self.montecarlo_dropout(model, model_input))
+            prediction_dict[get_name_from_path(image_path)] = score
 
         return prediction_dict
 

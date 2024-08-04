@@ -68,12 +68,6 @@ class RandomSelection(SegmentationSelectionStrategy):
 class EntropySelection(SegmentationSelectionStrategy):
     def score(self, prediction):
         entropy_map = entropy(prediction, axis=3)
-
-        # entropy_map = (entropy_map / np.max(entropy_map) * 255).astype(np.uint8)
-        #
-        # cv2.imshow(f"{float(np.sum(entropy_map))}", entropy_map[0])
-        # cv2.waitKey(0)
-
         return float(np.sum(entropy_map))
 
     def get_best_samples(self, scores, selection_size=100):
@@ -85,18 +79,11 @@ class MarginSelection(SegmentationSelectionStrategy):
     def score(self, prediction):
         # orders predictions depthwise for each pixel
         ordered_preds = np.sort(prediction, axis=-1)
-        # takes highest 2 predictions
-        ordered_preds_f2 = ordered_preds[:, :, :, -2:]
+        ordered_preds_f2 = ordered_preds[:, :, :, -2:] # takes highest 2 predictions
         # multiply first entry with -1 (first entry is second-highest pred)
         ordered_preds_f2[:, :, :, 0] *= -1.0
-
         # sum the preds depthwise (will result in difference between highest 2 preds)
         margins = np.sum(ordered_preds_f2, axis=-1)
-
-        # margins = (margins / np.max(margins) * 255).astype(np.uint8)
-        # cv2.imshow(f"{float(np.sum(margins, axis=(1, 2)))}", margins[0])
-        # cv2.waitKey(0)
-
         # return with - as we want to minimize difference between highest 2 predictions, hence maximize negative difference
         return -float(np.sum(margins, axis=(1, 2)))
 
@@ -177,7 +164,7 @@ def temp_print_vals(aggr: np.ndarray, image_name):
         lmaps.append(label_map)
         img = np.dstack([label_map, label_map, label_map]).astype(np.uint8)
         cv2.imwrite(
-            f"C:\\Users\\fef1clj\\Desktop\\lic\\real_disagreement\\1_epoch_trained\\uncert_map_{label_to_word[label]}_{image_name[:-4]}.png",
+            f"C:\\Desktop\\lic\\real_disagreement\\1_epoch_trained\\uncert_map_{label_to_word[label]}_{image_name[:-4]}.png",
             img)
 
         imgs.append(cv2.resize(img, (480, 256), cv2.INTER_NEAREST))
@@ -220,7 +207,6 @@ class AreaDisagreement(SegmentationSelectionStrategy):
     def get_best_samples(self, scores, selection_size=100):
         super().get_best_samples(scores, selection_size)
         return biggest_k_keys(scores, selection_size)
-
 
 
 class AreaDisagreementEntropy(SegmentationSelectionStrategy):

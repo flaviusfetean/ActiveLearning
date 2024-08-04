@@ -3,7 +3,7 @@ from typing import List, Callable
 
 import cv2
 import numpy as np
-from data_tooling.utils.files_utils import get_paths_with_extensions
+from utils.files_utils import get_paths_with_extensions
 from bayesian_generator import aggregate_outputs, convert_to_probability
 from scipy.stats import entropy
 from segmentation.utils import miou, dice_loss

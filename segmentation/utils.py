@@ -18,9 +18,12 @@ class DiceLoss(tf.keras.losses.Loss):
         self.gamma = gamma
 
     def call(self, y_true, y_pred):
-        y_true, y_pred = tf.cast(y_true, dtype=tf.float32), tf.cast(y_pred, tf.float32)
-        nominator = 2 * tf.reduce_sum(tf.multiply(y_pred, y_true)) + self.smooth
-        denominator = tf.reduce_sum(y_pred ** self.gamma) + tf.reduce_sum(y_true ** self.gamma) + self.smooth
+        y_true, y_pred = tf.cast(y_true, dtype=tf.float32), \
+            tf.cast(y_pred, tf.float32)
+        nominator = 2 * tf.reduce_sum(tf.multiply(y_pred, y_true)) + \
+                    self.smooth
+        denominator = tf.reduce_sum(y_pred ** self.gamma) + \
+                      tf.reduce_sum(y_true ** self.gamma) + self.smooth
         result = 1 - tf.divide(nominator, denominator)
         return result
 

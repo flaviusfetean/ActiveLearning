@@ -27,6 +27,6 @@ def gen_overlays(IMAGES_PATH, MASKS_PATH, OVERLAYS_PATH):
 
 if __name__ == "__main__":
     IMAGES_PATH = "C:\\datasets\\Cityscapes\\imgs"
-    MASKS_PATH = "C:\\Users\\fef1clj\\Desktop\\predictions"
-    OVERLAYS_PATH = "C:\\Users\\fef1clj\\Desktop\\overlays"
+    MASKS_PATH = "C:\\Desktop\\predictions"
+    OVERLAYS_PATH = "C:\\Desktop\\overlays"
     gen_overlays(IMAGES_PATH, MASKS_PATH, OVERLAYS_PATH)

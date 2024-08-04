@@ -99,3 +99,70 @@ def build_unet(input_size=(960, 512, 3), config = None):
     #unet_model.summary()
 
     return unet_model
+
+
+"""
+Same code without comments
+"""
+
+def double_conv_block(x, n_filters, batch_norm=False):
+    # Conv2D then ReLU activation
+    x = layers.Conv2D(n_filters, kernel_size=(3, 3), padding="same", activation="relu")(x)
+    if batch_norm:
+        x = layers.BatchNormalization()(x)
+    # Conv2D then ReLU activation
+    x = layers.Conv2D(n_filters, kernel_size=(3, 3), padding="same", activation="relu")(x)
+    if batch_norm:
+        x = layers.BatchNormalization()(x)
+    return x
+
+
+def downsample_block(x, n_filters, dropout):
+    f = double_conv_block(x, n_filters)
+    p = layers.MaxPool2D((2, 2))(f)
+    if dropout > 0:
+        p = layers.Dropout(dropout)(p)
+    return f, p
+
+def upsample_block(x, conv_features, n_filters, dropout, batch_norm):
+    x = layers.Conv2DTranspose(n_filters, (3, 3), (2, 2), padding="same")(x)
+    x = layers.concatenate([x, conv_features])
+    if dropout > 0:
+        x = layers.Dropout(dropout)(x)
+    x = double_conv_block(x, n_filters, batch_norm)
+    return x
+
+
+def build_unet(input_size=(960, 512, 3), config = None):
+
+    num_classes = config['num_classes']
+    num_filters = config['num_filters']
+
+    inputs = layers.Input(shape=input_size)
+    # encoder: contracting path - downsample
+    f1, p1 = downsample_block(inputs, num_filters, config['dropout'])
+    f2, p2 = downsample_block(p1, 2 * num_filters, config['dropout'])
+    f3, p3 = downsample_block(p2, 4 * num_filters, config['dropout'])
+    f4, p4 = downsample_block(p3, 8 * num_filters, config['dropout'])
+    #bottleneck
+    bottleneck = double_conv_block(p4, 16 * num_filters, config['batch_norm'])
+    # decoder: expanding path - upsample
+    u6 = upsample_block(bottleneck, f4, 8 * num_filters, config['dropout'],
+                        config['batch_norm'])
+    u7 = upsample_block(u6, f3, 4 * num_filters, config['dropout'],
+                        config['batch_norm'])
+    u8 = upsample_block(u7, f2, 2 * num_filters, config['dropout'],
+                        config['batch_norm'])
+    u9 = upsample_block(u8, f1, num_filters, config['dropout'],
+                        config['batch_norm'])
+    # outputs
+    outputs = layers.Conv2D(num_classes, (1, 1), padding="same",
+                            activation="softmax")(u9)
+    unet_model = tf.keras.Model(inputs, outputs, name="U-Net")
+
+    unet_model.compile(optimizer=tf.keras.optimizers.Adam(
+                        learning_rate=config['lr_init']),
+                        loss=NAME_TO_LOSS[config['loss']],
+                        metrics=[miou, iou, dice_coef])
+
+    return unet_model

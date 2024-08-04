@@ -10,7 +10,7 @@ from data_handler import DataHandler
 from typing import Callable
 
 import tensorflow as tf
-from data_tooling.utils.files_utils import create_folder, copy_files, get_paths
+from utils.files_utils import create_folder, copy_files, get_paths
 from data_selectors import SelectorWrapper
 from segmentation.selection_strategies.strategies import StrategyClass
 
@@ -106,7 +106,7 @@ class ActiveLearningProcess:
 
         self.selector = SelectorWrapper(selection_strategy=StrategyClass[self.config["selection_strategy"]].value,
                                         data_handler=data_handler,
-                                        selection_size=self.config['selection_size'] if not DEBUG else 10)
+                                        selection_size=self.config['selection_size'] if not DEBUG else 3)
 
         acquired_samples = 0
         i = 0

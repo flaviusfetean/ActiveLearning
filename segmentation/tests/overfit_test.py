@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 
 from unet import build_unet
-from data_tooling.utils.files_utils import get_paths
+from utils.files_utils import get_paths
 from segmentation.utils import segmentation_preprocess, segmentation_preprocess_output
 from al_sample_script import get_args, get_config
 
@@ -83,6 +83,5 @@ if __name__ == "__main__":
     args = get_args()
     configuration = get_config(args.config_file)
     model = build_unet(input_size=(256, 480, 3), config=configuration)
-
 
     overfit_test(model, configuration)

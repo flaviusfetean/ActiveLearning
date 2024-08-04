@@ -2,7 +2,9 @@ from collections import namedtuple
 
 import tqdm
 
-from data_tooling.utils.files_utils import get_paths
+from sklearn.model_selection import train_test_split
+from utils.files_utils import get_paths, get_paths_recursive, create_folder, get_paths_recursive_with_extension
+import shutil
 import cv2
 import numpy as np
 import os
@@ -131,31 +133,80 @@ LabelToColorLess = Func_LabelToColorLess()
 #label id to color in restricted class mode
 LessColorMap    = { label.id      : LabelToColorLess[label.lessId] for label in labels}
 
-def map_colors():
-    MASKS_PATH = "C:\\BitBucket\\datasets\\Cityscapes\\masks"
-    LESS_MASKS_PATH = "C:\\BitBucket\\datasets\\Cityscapes\\masks_less"
-    all_masks = ["C:\\BitBucket\\datasets\\Cityscapes\\masks\\hanover_000000_028460.png",
-                 "C:\\BitBucket\\datasets\\Cityscapes\\masks\\hanover_000000_029043.png"]#get_paths(MASKS_PATH)
+
+def unpack(images_path, masks_path, images_unpacked_path, masks_unpacked_path):
+    images = get_paths_recursive(images_path)
+    masks = get_paths_recursive_with_extension(masks_path, "_color.png")
+
+    create_folder(images_unpacked_path)
+    create_folder(masks_unpacked_path)
+
+    for image_path, mask_path in tqdm.tqdm(zip(images, masks)):
+        # image = cv2.imread(image_path)
+        # mask = cv2.imread(mask_path)
+
+        image_name = image_path.split(os.path.sep)[-1]
+        mask_name = mask_path.split(os.path.sep)[-1]
+
+        image_unpacked_path = os.path.sep.join([images_unpacked_path, image_name])
+        mask_unpacked_path = os.path.sep.join([masks_unpacked_path, mask_name])
+
+        shutil.copy(image_path, image_unpacked_path)
+        shutil.copy(mask_path, mask_unpacked_path)
+
+
+def extract_test(train_images_path, train_masks_path, test_images_path, test_masks_path, split_ratio=0.8):
+    train_images = get_paths_recursive(train_images_path)
+    train_masks = get_paths_recursive(train_masks_path)
+
+    train_images, test_images, train_masks, test_masks = train_test_split(train_images, train_masks,
+                                                                        test_size=1-split_ratio, random_state=42)
+
+    create_folder(test_images_path)
+    create_folder(test_masks_path)
+
+    for image_path, mask_path in tqdm.tqdm(zip(test_images, test_masks)):
+        image_name = image_path.split(os.path.sep)[-1]
+        mask_name = mask_path.split(os.path.sep)[-1]
+
+        test_image_path = os.path.sep.join([test_images_path, image_name])
+        test_mask_path = os.path.sep.join([test_masks_path, mask_name])
+
+        shutil.move(image_path, test_image_path)
+        shutil.move(mask_path, test_mask_path)
+
+
+def map_colors(masks_path, less_masks_path):
+    all_masks = get_paths(masks_path)
 
     for mask_path in tqdm.tqdm(all_masks):
         name = mask_path.split(os.path.sep)[-1]
-        less_path = os.path.sep.join([LESS_MASKS_PATH, name])
-        mask = cv2.imread(mask_path)[...,::-1]
-        mask_less = np.zeros_like(mask)
-        for id, color_less in LessColorMap.items():
-            boolean_mask = np.all(mask == labels[id].color, axis=-1)
-            mask_less[boolean_mask] = np.array(color_less, dtype=np.uint8)
-        cv2.imwrite(less_path, mask_less)
+        if "color" in name:
+            less_path = os.path.sep.join([less_masks_path, name])
+            mask = cv2.imread(mask_path)[...,::-1]
+            mask_less = np.zeros_like(mask)
+            for id, color_less in LessColorMap.items():
+                boolean_mask = np.all(mask == labels[id].color, axis=-1)
+                mask_less[boolean_mask] = np.array(color_less, dtype=np.uint8)
+            cv2.imwrite(less_path, mask_less)
 
 
 if __name__ == "__main__":
-
+    MASKS_PATH = "D:\\Deep_Learning_Projects\\datasets\\Cityscapes\\masks"
+    LESS_MASKS_PATH = "D:\\Deep_Learning_Projects\\datasets\\Cityscapes\\train\\masks_less"
+    IMAGES_PATH = "D:\\Deep_Learning_Projects\\datasets\\Cityscapes\\images"
+    IMAGES_UNPACKED_PATH = "D:\\Deep_Learning_Projects\\datasets\\Cityscapes\\train\\images_unpacked"
+    MASKS_UNPACKED_PATH = "D:\\Deep_Learning_Projects\\datasets\\Cityscapes\\train\\masks_unpacked"
+    TEST_IMAGES_PATH = "D:\\Deep_Learning_Projects\\datasets\\Cityscapes\\test\\images_upacked"
+    TEST_MASKS_LESS_PATH = "D:\\Deep_Learning_Projects\\datasets\\Cityscapes\\test\\masks_less"
 
     # with open("configs\\cityscapes_random_less.yaml", "a") as f:
     #     for color in LabelToColorLess.values():
     #         f.write(f"\n-{color}")
 
-    map_colors()
+    # unpack(IMAGES_PATH, MASKS_PATH, IMAGES_UNPACKED_PATH, MASKS_UNPACKED_PATH)
+    # map_colors(MASKS_UNPACKED_PATH, LESS_MASKS_PATH)
+    extract_test(IMAGES_UNPACKED_PATH, LESS_MASKS_PATH, TEST_IMAGES_PATH, TEST_MASKS_LESS_PATH)
 
     # with open("configs\\cityscapes_random.yaml", "a") as f:
     #     for color in LabelToColor.values():

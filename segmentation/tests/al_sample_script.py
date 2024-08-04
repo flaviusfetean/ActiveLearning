@@ -15,7 +15,7 @@ from segmentation.augmentation import *
 from unet import build_unet
 import tqdm
 
-from data_tooling.utils.files_utils import get_name_from_path, read_yaml_file
+from utils.files_utils import get_name_from_path, read_yaml_file
 from learners import Learner
 from segmentation.utils import categorical_to_mask, segmentation_preprocess, \
     segmentation_preprocess_output, tf_segmentation_preprocess, tf_segmentation_preprocess_output
@@ -73,7 +73,7 @@ class UnetLearner(Learner):
                                                         save_best_only=True)]
 
         self.model.fit(train_dataset.batch(self.train_config['bsize']), steps_per_epoch=len(xs) // self.train_config['bsize'],
-                       epochs=1 if DEBUG else self.train_config['num_epochs'], verbose=2 if DISABLE_VERBOSE else 1,
+                       epochs=3 if DEBUG else self.train_config['num_epochs'], verbose=2 if DISABLE_VERBOSE else 1,
                        validation_steps=len(xs_val) // self.train_config['bsize'], validation_data=val_dataset.batch(self.train_config['bsize']),
                        callbacks=callbacks)
 
